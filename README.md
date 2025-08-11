@@ -3,7 +3,7 @@
 **Syfte**
 Hålla uppspelning av **upp till 20 förinspelade källor** i fas över en eller flera CasparCG‑servrar, för "låtsas‑live"/utställning där besökare kan klippa i en ATEM i efterhand. Systemet använder **dubbellager** (aktiv/standby) för sömlös **CUT/FADE‑resync** och har tre lägen: **OFF / AUTO / MANUAL**.
 
-> Transparens: Lösningen bygger på dokumenterade mönster i CasparCG/AMCP och inte på egna fysiska erfarenheter.
+> Transparens: Lösningen bygger på dokumenterade mönster i CasparCG/AMCP.
 
 ---
 
@@ -169,5 +169,118 @@ Klicka **Spara slots** för att skriva ändringarna till `config.json`. Servern 
   "fps": 50,
   "frames": 30000,
   "autosyncIntervalSec": 10,
-  "driftToleran
+  "driftToleranceFrames": 1,
+  "resyncMode": "cut",
+  "fadeFrames": 2,
+  "slots": [
+    { "id": 1,  "name": "S01", "host": "", "port": 5250, "channel": 1, "baseLayer": 10, "clip": "", "tc": "00:00:00:00" },
+    { "id": 2,  "name": "S02", "host": "", "port": 5250, "channel": 1, "baseLayer": 11, "clip": "", "tc": "00:00:00:00" },
+    { "id": 3,  "name": "S03", "host": "", "port": 5250, "channel": 1, "baseLayer": 12, "clip": "", "tc": "00:00:00:00" },
+    { "id": 4,  "name": "S04", "host": "", "port": 5250, "channel": 1, "baseLayer": 13, "clip": "", "tc": "00:00:00:00" },
+    { "id": 5,  "name": "S05", "host": "", "port": 5250, "channel": 1, "baseLayer": 14, "clip": "", "tc": "00:00:00:00" },
+    { "id": 6,  "name": "S06", "host": "", "port": 5250, "channel": 1, "baseLayer": 15, "clip": "", "tc": "00:00:00:00" },
+    { "id": 7,  "name": "S07", "host": "", "port": 5250, "channel": 1, "baseLayer": 16, "clip": "", "tc": "00:00:00:00" },
+    { "id": 8,  "name": "S08", "host": "", "port": 5250, "channel": 1, "baseLayer": 17, "clip": "", "tc": "00:00:00:00" },
+    { "id": 9,  "name": "S09", "host": "", "port": 5250, "channel": 1, "baseLayer": 18, "clip": "", "tc": "00:00:00:00" },
+    { "id": 10, "name": "S10", "host": "", "port": 5250, "channel": 1, "baseLayer": 19, "clip": "", "tc": "00:00:00:00" },
+    { "id": 11, "name": "S11", "host": "", "port": 5250, "channel": 1, "baseLayer": 20, "clip": "", "tc": "00:00:00:00" },
+    { "id": 12, "name": "S12", "host": "", "port": 5250, "channel": 1, "baseLayer": 21, "clip": "", "tc": "00:00:00:00" },
+    { "id": 13, "name": "S13", "host": "", "port": 5250, "channel": 1, "baseLayer": 22, "clip": "", "tc": "00:00:00:00" },
+    { "id": 14, "name": "S14", "host": "", "port": 5250, "channel": 1, "baseLayer": 23, "clip": "", "tc": "00:00:00:00" },
+    { "id": 15, "name": "S15", "host": "", "port": 5250, "channel": 1, "baseLayer": 24, "clip": "", "tc": "00:00:00:00" },
+    { "id": 16, "name": "S16", "host": "", "port": 5250, "channel": 1, "baseLayer": 25, "clip": "", "tc": "00:00:00:00" },
+    { "id": 17, "name": "S17", "host": "", "port": 5250, "channel": 1, "baseLayer": 26, "clip": "", "tc": "00:00:00:00" },
+    { "id": 18, "name": "S18", "host": "", "port": 5250, "channel": 1, "baseLayer": 27, "clip": "", "tc": "00:00:00:00" },
+    { "id": 19, "name": "S19", "host": "", "port": 5250, "channel": 1, "baseLayer": 28, "clip": "", "tc": "00:00:00:00" },
+    { "id": 20, "name": "S20", "host": "", "port": 5250, "channel": 1, "baseLayer": 29, "clip": "", "tc": "00:00:00:00" }
+  ]
+}
 ```
+
+### Timecode → frames
+
+`HH:MM:SS:FF` vid `fps`. Exempel @50 fps: `00:03:24:05` ⇒ `(3*60 + 24)*50 + 5 = 10205` frames.
+Systemet räknar **target‑frame per slot** som: `target = (elapsed*fps + tcFrames) % frames`, där `elapsed` är sekunder sedan `t0` (då du tryckte **Start** eller **Start från TC**).
+
+---
+
+## Drift & användning
+
+1. **Fyll slots** och klicka **Spara slots**.
+2. **Preload** för att ladda båda lagren i pausat läge.
+3. **Start** eller **Start från TC**. (Default: ingen automatisk PLAY sker på serverstart.)
+4. **Mode**:
+
+   * **OFF**: ingen autosync; du kan manuellt resynka.
+   * **AUTO**: loop som resynkar när |drift| > tolerans, var `autosyncIntervalSec` sekund.
+   * **MANUAL**: samma som OFF men tydlig etikett i UI.
+5. **Resync nu**: Tvinga resync med valt `CUT/FADE`. FADE använder `fadeFrames` (1–4 typiskt).
+6. **Spara (inställningar)** för att uppdatera intervall/tolerans/fps/frames/resync‑läge i farten.
+
+---
+
+## API för Companion/extern styrning
+
+* `POST /api/mode {"mode":"off|auto|manual"}`
+* `POST /api/preload` / `POST /api/start` / `POST /api/start-from-tc` / `POST /api/pause`
+* `POST /api/resync {"mode":"cut|fade"}`
+* `POST /api/settings { autosyncIntervalSec, driftToleranceFrames, fps, frames, resyncMode, fadeFrames }`
+* `GET /api/config` → nuvarande config
+* `POST /api/config { slots:[...] }` → spara slots (20 objekt)
+
+**Exempel (Companion HTTP action):**
+
+```
+URL: http://<server-ip>:8080/api/resync
+Method: POST
+Body: {"mode":"fade"}
+Content-Type: application/json
+```
+
+---
+
+## Köra i produktion
+
+* **Som tjänst (NSSM):**
+
+  1. Installera NSSM. 2) `nssm install CasparAutosync` → `Path` = `node.exe`, `Arguments` = `index.js`, `Startup dir` = projektmappen.
+  2. Sätt **Log on** och **Restart** policy enligt behov. Starta tjänsten.
+* **Task Scheduler:** Skapa ett jobb som startar `npm start` vid inlogg/boot.
+* **Reverse proxy (frivilligt):** IIS/NGINX kan terminera SSL och proxya till `localhost:8080`.
+* **Loggning:** Om du kör som tjänst, peka NSSM\:s stdout/stderr till en `logs/`‑mapp (finns i `.gitignore`).
+
+---
+
+## Brandvägg & portar
+
+* **8080/TCP**: Webb‑GUI (från kontroll‑datorer).
+* **5250/TCP**: CasparCG AMCP (från servern till playout‑burkarna).
+
+---
+
+## Felsökning
+
+* **Current = –**
+  Lagret spelar inte (PAUSE) eller din FFmpeg‑build saknar `CALL FRAME`. Testa **Start** igen. Kontrollera kanal/lager.
+* **Drift ökar**
+  Säkerställ identisk fps & längd på alla klipp, intra‑only media, NTP synk. Sänk intervall eller höj tolerans.
+* **Blink vid FADE**
+  Öka `fadeFrames` (2–3) eller använd `CUT`. Kontrollera disk/CPU‑headroom.
+* **Disconnected**
+  Fel IP/port eller brandvägg blockerar 5250. Verifiera att CasparCG kör och svarar på AMCP.
+
+---
+
+## FAQ
+
+**Q: Måste jag använda +10 för standby‑lager?**
+A: Nej, men mallen gör det enkelt att manuellt felsöka. Du kan välja andra steg – uppdatera bara `baseLayer`.
+
+**Q: Spelar standby hela tiden?**
+A: Nej. Standby är **PAUSE** med **OPACITY=0** och **VOLUME=0** tills resync sker; båda lagren spelar endast under en kort FADE/CUT.
+
+**Q: Startar spelning automatiskt på serverstart?**
+A: Nej. Default är **OFF**, och **PLAY** triggas först när du klickar **Start**/**Start från TC**.
+
+**Q: Timecode per slot – måste alla vara lika?**
+A: Nej. Du kan ge olika offsets per slot. För för att starta synkrona klipp är det rekommenderade att ange samma TC överallt.
