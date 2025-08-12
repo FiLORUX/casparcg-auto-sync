@@ -1,286 +1,131 @@
-# README.md – Caspar Autosync (20 slots)
+# Caspar Autosync with Dubbellayer Resync
 
-**Syfte**
-Hålla uppspelning av **upp till 20 förinspelade källor** i fas över en eller flera CasparCG‑servrar, för "låtsas‑live"/utställning där besökare kan klippa i en ATEM i efterhand. Systemet använder **dubbellager** (aktiv/standby) för sömlös **CUT/FADE‑resync** och har tre lägen: **OFF / AUTO / MANUAL**.
+This repository contains a **complete, production‑ready control server** and **web‑based user interface** for synchronised playout across up to **twenty** CasparCG playback nodes.  It solves the common problem of keeping multiple SDI/NDI feeds in frame‑accurate sync and provides a modern, dark‑themed dashboard for configuring and operating your playout.
 
-> Transparens: Lösningen bygger på dokumenterade mönster i CasparCG/AMCP.
+## Key Features
 
----
+* **20 independent slots** – each slot represents a single clip on a remote CasparCG server.  You can assign host, port, channel, base layer, file name and start timecode per slot.
+* **Frame‑accurate synchronisation** – the server maintains a common start time (`t0`) and periodically compares the playing frame of each slot to the expected frame.  When drift exceeds a configurable tolerance the system performs a seamless resync using a second hidden layer and either a hard *cut* or a short *fade* (cross‑fade).
+* **Manual or automatic operation** – choose between **OFF**, **MANUAL** and **AUTO** modes.  Manual mode lets you trigger resyncs on demand, while Auto mode keeps your feeds aligned at a user‑defined interval.
+* **Timecode support** – for each slot you can enter a starting timecode in `HH:MM:SS:FF` format.  During playback the clip will seek to that frame before starting, allowing you to cue different portions of a file across your feeds.
+* **Persistent configuration** – all settings (global and per‑slot) are stored in `config.json` on the server.  Changes via the web interface are saved so that reloading the page or connecting from another browser will reuse the same settings.
+* **Modern dark‑themed GUI** – built with vanilla HTML/CSS/JS, the interface uses a sleek dark mode with subtle colour coding for different states (e.g. green for in‑sync, red for drift, blue for current mode).  Responsive design ensures it looks good on tablets and desktops.
+* **WebSocket status updates** – the dashboard updates in real time via WebSockets to show current frame, target frame and drift for each slot without manual refreshing.
+* **Ready for Windows** – the code and instructions below assume a Windows environment for ease of installation.  It will run equally well on Linux or macOS with minimal adjustments (replace Windows‑specific commands with their UNIX equivalents).
 
-## Innehåll
-
-* [Funktioner](#funktioner)
-* [Arkitektur i korthet](#arkitektur-i-korthet)
-* [Systemkrav](#systemkrav)
-* [Installera på Windows – steg för steg](#installera-på-windows--steg-för-steg)
-* [VS Code & GitHub‑flöde](#vs-code--github-flöde)
-* [Projektstruktur & .gitignore](#projektstruktur--gitignore)
-* [Konfiguration](#konfiguration)
-
-  * [Globala inställningar](#globala-inställningar)
-  * [Slots (20 st) via GUI](#slots-20-st-via-gui)
-  * [Exempel `config.sample.json`](#exempel-configsamplejson)
-  * [Timecode → frames](#timecode--frames)
-* [Drift & användning](#drift--användning)
-* [API för Companion/extern styrning](#api-för-companionextern-styrning)
-* [Köra i produktion](#köra-i-produktion)
-* [Brandvägg & portar](#brandvägg--portar)
-* [Felsökning](#felsökning)
-* [FAQ](#faq)
-* [Licens](#licens)
-
----
-
-## Funktioner
-
-* 🔁 **Autosync**: resynkar med valt intervall **endast** om |drift| > tolerans (i frames).
-* ✂️ **Resync-lägen**: `CUT` (omedelbar) eller `FADE` (1–n frames micro‑fade).
-* 🧱 **Dubbellager per slot**: `baseLayer` = aktivt lager, `baseLayer+10` = standby (roller byts vid resync).
-* 🧩 **20 slots i GUI**: Ange **Host/IP, Port, Kanal, Bas‑lager, Clip, Timecode** (HH\:MM\:SS\:FF). Tomma slots ignoreras.
-* 🕒 **Start från TC**: Starta alla från valfri timecode per slot.
-* 💾 **Persistent config**: Servern sparar inställningar i `config.json` (överlever reloads & olika webbläsare).
-* 🖥️ **Mörkt, modernt webb‑GUI** med live‑status (WebSocket), driftmätning, mode‑badges och snabbkommandon.
-
----
-
-## Arkitektur i korthet
-
-* **Node.js‑server** (Express) som styr CasparCG via **AMCP** (bibliotek: `casparcg-connection`).
-* **Webb‑GUI** (statisk HTML/CSS/JS) som pratar HTTP + WebSocket med servern.
-* **Dubbellager‑metod**: varje slot har ett aktivt och ett standby‑lager (±10) för sömlös CUT/FADE och atomiska byten.
-
----
-
-## Systemkrav
-
-* **Windows 10/11** (fungerar även macOS/Linux) för kontrollservern.
-* **Node.js LTS** (18 eller 20 rekommenderas).
-* **CasparCG 2.3.x LTS** på varje playout‑dator (AMCP 5250).
-* **Blackmagic Desktop Video** + korrekt routad SDI i Caspar‑konfig.
-* **Intra‑only** media (ProRes / DNxHR / H.264 All‑Intra). Enhetlig **fps** och **längd (frames)** för alla källor.
-* **Rekommenderat**: NTP på alla maskiner + genlock till SDI‑korten/ATEM.
-
----
-
-## Installera på Windows – steg för steg
-
-1. **Installera Node.js LTS** från \[nodejs.org]. Verifiera:
-
-   ```powershell
-   node -v
-   npm -v
-   ```
-2. **Kopiera projektet** (Git eller zip):
-
-   ```powershell
-   git clone <din-github-url> caspar-autosync
-   cd caspar-autosync
-   ```
-3. **Skapa konfigfil** från mallen:
-
-   ```powershell
-   copy config.sample.json config.json
-   ```
-
-   (Du kan lämna `slots` tomma – de fylls i via GUI.)
-4. **Installera beroenden och starta**:
-
-   ```powershell
-   npm install
-   npm start
-   ```
-5. **Öppna GUI**: `http://localhost:8080` (eller `http://<server-ip>:8080`).
-
-> Alternativ: `scripts/start-windows.bat` gör steg 4–5.
-
----
-
-## VS Code & GitHub‑flöde
-
-* **Öppna mappen** `caspar-autosync/` i VS Code.
-* Använd **NPM Scripts**‑panelen eller terminalen (`npm start`).
-* **.gitignore** utesluter `node_modules/` och **`config.json`** (personlig server‑state).
-* Skapa ny **GitHub‑repo** och pusha mappen. Lämna `config.json` utanför repo (genereras per miljö).
-
----
-
-## Projektstruktur & .gitignore
+## Project Structure
 
 ```
-caspar-autosync/
-├─ .gitignore                 # node_modules/, config.json, .env, logs/
-├─ package.json               # npm‑manifest & scripts
-├─ README.md                  # denna fil
-├─ config.sample.json         # globala defaults; kopieras till config.json
-├─ config.json                # persistent server‑state (skapas av dig/GUI) – ignoreras i Git
-├─ index.js                   # Node‑server + AMCP‑logik + autosync
-├─ public/                    # statiska GUI‑filer
-│  ├─ index.html              # mörkt, responsivt GUI
-│  ├─ style.css               # tema + layout
-│  └─ app.js                  # klientlogik (WebSocket + API)
-└─ scripts/
-   └─ start-windows.bat       # valfritt startskript
+caspar-sync/
+├── README.md              – You are reading it now.
+├── package.json           – NPM metadata and dependencies.
+├── index.js               – The Node.js control server.
+├── config.sample.json     – Template configuration with 20 empty slots.
+├── config.json            – Generated by the application; holds your live settings.
+└── public/
+    ├── index.html         – The browser GUI.
+    ├── style.css          – Dark theme styling for the GUI.
+    └── script.js          – Client‑side logic (fetching status, sending commands, persisting values).
 ```
 
-**.gitignore (förslag)**
+## Installation
 
+### Prerequisites
+
+1. **Node.js ≥ 18** – download and install from [nodejs.org](https://nodejs.org).  The application uses ECMAScript modules (`type: module` in `package.json`), so Node 18 or later is recommended.
+2. **Git** – to clone this repository and version control your changes.
+3. **CasparCG servers** – up to twenty machines running CasparCG server (preferably the latest LTS build).  Each server should expose the AMCP control port (default `5250`) and have the desired clips in its media folder.
+
+### Steps
+
+1. **Clone the repository**
+
+```bash
+git clone https://github.com/yourusername/caspar-sync.git
+cd caspar-sync
 ```
-node_modules/
-config.json
-.env
-logs/
-.DS_Store
-npm-debug.log*
+
+2. **Install dependencies**
+
+```bash
+npm install
 ```
 
----
+3. **Prepare a configuration file**
 
-## Konfiguration
+Copy the provided sample and edit it:
 
-### Globala inställningar
+```bash
+cp config.sample.json config.json
+```
 
-I `config.json` (skapad från `config.sample.json`):
+Open `config.json` in a text editor and fill in the settings:
 
-* `fps`: Hela systemets bildfrekvens (t.ex. 50 eller 25).
-* `frames`: Totalt antal frames per klipp/loop (t.ex. 10 min @50 fps = 30 000).
-* `autosyncIntervalSec`: Hur ofta AUTO kontrollerar och ev. resynkar.
-* `driftToleranceFrames`: Tolerans i frames innan resync triggas.
-* `resyncMode`: `cut` eller `fade`.
-* `fadeFrames`: längd på FADE i frames (1–4 brukar fungera fint).
+* `fps` – the frame rate of your material (e.g. `50` for 1080p50, `29.97` for NTSC drop frame).  **Use consistent fps across all slots.**
+* `frames` – the total number of frames in a loop for the purpose of wrapping the modulo calculation.  If your longest clip is five minutes at 50 fps, set this to `5*60*50 = 15000`.  It is not a hard limit – it simply determines when the timer resets.  Choose a value equal to or greater than the length of your longest clip.
+* `autosyncIntervalSec` – number of seconds between drift checks in AUTO mode.  Lower values mean quicker corrections but more network chatter.
+* `driftToleranceFrames` – maximum allowed frame drift before a resync is triggered.  A value of `1` keeps clips within ±1 frame.
+* `resyncMode` – either `"cut"` or `"fade"`.  A cut performs an instant switch; a fade uses `fadeFrames` frames to cross‑fade.
+* `fadeFrames` – number of frames for a cross‑fade when `resyncMode` is `"fade"`.
+* `slots` – an array of objects (20 entries by default).  Each slot must define at least `host`, `channel`, `baseLayer` and `clip` to be active.  `timecode` is optional and defaults to `"00:00:00:00"`.
 
-### Slots (20 st) via GUI
-
-I GUI‑sektionen **Slots** fyller du per slot:
-
-* **Host/IP** (AMCP‑adress), **Port** (standard 5250)
-* **Kanal** (Caspar‑channel)
-* **Bas‑lager** (aktivt lager, standby = +10)
-* **Clip** (filnamn i Caspar‑`media`‑mapp)
-* **TC** (start‑timecode, format `HH:MM:SS:FF`, default `00:00:00:00`)
-
-> **Tom host eller tomt clip ⇒ slot ignoreras.**
-
-Klicka **Spara slots** för att skriva ändringarna till `config.json`. Servern skapar/uppdaterar AMCP‑anslutningar för ifyllda slots och rensar ev. gamla.
-
-### Exempel `config.sample.json`
+Example slot configuration:
 
 ```json
 {
-  "fps": 50,
-  "frames": 30000,
-  "autosyncIntervalSec": 10,
-  "driftToleranceFrames": 1,
-  "resyncMode": "cut",
-  "fadeFrames": 2,
-  "slots": [
-    { "id": 1,  "name": "S01", "host": "", "port": 5250, "channel": 1, "baseLayer": 10, "clip": "", "tc": "00:00:00:00" },
-    { "id": 2,  "name": "S02", "host": "", "port": 5250, "channel": 1, "baseLayer": 11, "clip": "", "tc": "00:00:00:00" },
-    { "id": 3,  "name": "S03", "host": "", "port": 5250, "channel": 1, "baseLayer": 12, "clip": "", "tc": "00:00:00:00" },
-    { "id": 4,  "name": "S04", "host": "", "port": 5250, "channel": 1, "baseLayer": 13, "clip": "", "tc": "00:00:00:00" },
-    { "id": 5,  "name": "S05", "host": "", "port": 5250, "channel": 1, "baseLayer": 14, "clip": "", "tc": "00:00:00:00" },
-    { "id": 6,  "name": "S06", "host": "", "port": 5250, "channel": 1, "baseLayer": 15, "clip": "", "tc": "00:00:00:00" },
-    { "id": 7,  "name": "S07", "host": "", "port": 5250, "channel": 1, "baseLayer": 16, "clip": "", "tc": "00:00:00:00" },
-    { "id": 8,  "name": "S08", "host": "", "port": 5250, "channel": 1, "baseLayer": 17, "clip": "", "tc": "00:00:00:00" },
-    { "id": 9,  "name": "S09", "host": "", "port": 5250, "channel": 1, "baseLayer": 18, "clip": "", "tc": "00:00:00:00" },
-    { "id": 10, "name": "S10", "host": "", "port": 5250, "channel": 1, "baseLayer": 19, "clip": "", "tc": "00:00:00:00" },
-    { "id": 11, "name": "S11", "host": "", "port": 5250, "channel": 1, "baseLayer": 20, "clip": "", "tc": "00:00:00:00" },
-    { "id": 12, "name": "S12", "host": "", "port": 5250, "channel": 1, "baseLayer": 21, "clip": "", "tc": "00:00:00:00" },
-    { "id": 13, "name": "S13", "host": "", "port": 5250, "channel": 1, "baseLayer": 22, "clip": "", "tc": "00:00:00:00" },
-    { "id": 14, "name": "S14", "host": "", "port": 5250, "channel": 1, "baseLayer": 23, "clip": "", "tc": "00:00:00:00" },
-    { "id": 15, "name": "S15", "host": "", "port": 5250, "channel": 1, "baseLayer": 24, "clip": "", "tc": "00:00:00:00" },
-    { "id": 16, "name": "S16", "host": "", "port": 5250, "channel": 1, "baseLayer": 25, "clip": "", "tc": "00:00:00:00" },
-    { "id": 17, "name": "S17", "host": "", "port": 5250, "channel": 1, "baseLayer": 26, "clip": "", "tc": "00:00:00:00" },
-    { "id": 18, "name": "S18", "host": "", "port": 5250, "channel": 1, "baseLayer": 27, "clip": "", "tc": "00:00:00:00" },
-    { "id": 19, "name": "S19", "host": "", "port": 5250, "channel": 1, "baseLayer": 28, "clip": "", "tc": "00:00:00:00" },
-    { "id": 20, "name": "S20", "host": "", "port": 5250, "channel": 1, "baseLayer": 29, "clip": "", "tc": "00:00:00:00" }
-  ]
+  "name": "Slot 1",
+  "host": "192.168.10.21",
+  "port": 5250,
+  "channel": 1,
+  "baseLayer": 10,
+  "clip": "my_video.mov",
+  "timecode": "00:03:24:05"
 }
 ```
 
-### Timecode → frames
+If you leave `host` or `clip` blank, that slot will be ignored (no connection attempt will be made).
 
-`HH:MM:SS:FF` vid `fps`. Exempel @50 fps: `00:03:24:05` ⇒ `(3*60 + 24)*50 + 5 = 10205` frames.
-Systemet räknar **target‑frame per slot** som: `target = (elapsed*fps + tcFrames) % frames`, där `elapsed` är sekunder sedan `t0` (då du tryckte **Start** eller **Start från TC**).
+4. **Start the server**
 
----
-
-## Drift & användning
-
-1. **Fyll slots** och klicka **Spara slots**.
-2. **Preload** för att ladda båda lagren i pausat läge.
-3. **Start** eller **Start från TC**. (Default: ingen automatisk PLAY sker på serverstart.)
-4. **Mode**:
-
-   * **OFF**: ingen autosync; du kan manuellt resynka.
-   * **AUTO**: loop som resynkar när |drift| > tolerans, var `autosyncIntervalSec` sekund.
-   * **MANUAL**: samma som OFF men tydlig etikett i UI.
-5. **Resync nu**: Tvinga resync med valt `CUT/FADE`. FADE använder `fadeFrames` (1–4 typiskt).
-6. **Spara (inställningar)** för att uppdatera intervall/tolerans/fps/frames/resync‑läge i farten.
-
----
-
-## API för Companion/extern styrning
-
-* `POST /api/mode {"mode":"off|auto|manual"}`
-* `POST /api/preload` / `POST /api/start` / `POST /api/start-from-tc` / `POST /api/pause`
-* `POST /api/resync {"mode":"cut|fade"}`
-* `POST /api/settings { autosyncIntervalSec, driftToleranceFrames, fps, frames, resyncMode, fadeFrames }`
-* `GET /api/config` → nuvarande config
-* `POST /api/config { slots:[...] }` → spara slots (20 objekt)
-
-**Exempel (Companion HTTP action):**
-
-```
-URL: http://<server-ip>:8080/api/resync
-Method: POST
-Body: {"mode":"fade"}
-Content-Type: application/json
+```bash
+npm start
 ```
 
----
+The server will bind to `localhost:8080` by default and read `config.json`.  It also creates a WebSocket at the same port for live updates.  You can change the listening port by setting the `PORT` environment variable:
 
-## Köra i produktion
+```bash
+PORT=9000 npm start
+```
 
-* **Som tjänst (NSSM):**
+5. **Open the web interface**
 
-  1. Installera NSSM. 2) `nssm install CasparAutosync` → `Path` = `node.exe`, `Arguments` = `index.js`, `Startup dir` = projektmappen.
-  2. Sätt **Log on** och **Restart** policy enligt behov. Starta tjänsten.
-* **Task Scheduler:** Skapa ett jobb som startar `npm start` vid inlogg/boot.
-* **Reverse proxy (frivilligt):** IIS/NGINX kan terminera SSL och proxya till `localhost:8080`.
-* **Loggning:** Om du kör som tjänst, peka NSSM\:s stdout/stderr till en `logs/`‑mapp (finns i `.gitignore`).
+Navigate to `http://localhost:8080` in your browser.  The page will load your current configuration.  Any changes you make to slots or global settings can be saved with the “Save Config” button.  Starting playback with the “Start” button will call `PLAY` and `SEEK` on all active slots simultaneously.
 
----
+## Usage Tips
 
-## Brandvägg & portar
+* **Preload before starting** – clicking **Preload** loads all clips into memory on each Caspar node, ready to play.  It does not make the layers visible.  Use this if you want to warm up your servers before the actual start.
+* **Start** – begins playback from the specified timecodes on all active slots and sets the common start time (`t0`).  It also makes the active layer visible (opacity 1) and mutes the standby layer.  You can click **Start** multiple times; each time resets `t0` and restarts all clips.
+* **Pause** – pauses playback on both active and standby layers across all slots.  Resume by pressing **Start** again (resets `t0`).
+* **Resync** – performs an immediate sync according to the selected resync mode (cut or fade).  This is useful in MANUAL mode to correct drift on demand.  In AUTO mode the system will call resync itself whenever drift exceeds the tolerance.
+* **Modes** – choose **OFF** (no automatic resyncs), **MANUAL** (only manual resync), or **AUTO** (periodic resync).  The current mode is displayed next to the buttons.
+* **Fade vs Cut** – use **Cut** for hard switches (no cross‑fade), and **Fade** for a subtle cross‑fade.  The `fadeFrames` field defines how long (in frames) the cross‑fade lasts.
 
-* **8080/TCP**: Webb‑GUI (från kontroll‑datorer).
-* **5250/TCP**: CasparCG AMCP (från servern till playout‑burkarna).
+## Development Notes
 
----
+* **Commenting and readability** – all JavaScript files contain extensive comments explaining the purpose of functions, parameters and internal data structures.  Even if you are not a coder, you should be able to follow how the pieces fit together.
+* **Modularity** – the server logic is separated from the front‑end UI.  The `script.js` file handles all browser interaction and communicates with the server via `fetch` (for commands and config) and WebSocket (for live status).
+* **CasparCG version** – this application targets the latest CasparCG LTS release (currently 2.3.x).  It uses the [casparcg‑connection](https://www.npmjs.com/package/casparcg-connection) package to talk to the AMCP protocol.  Should you upgrade to a future version, no changes are expected unless AMCP semantics change.
+* **Persisting settings** – saving configuration updates `config.json` on disk.  If the file is missing at startup, the server will fall back to `config.sample.json`.  Feel free to commit `config.sample.json` to version control and add `config.json` to `.gitignore` (already done) to avoid pushing your personal settings.
+* **Windows services** – to run this control server as a service on Windows, you can use [NSSM](https://nssm.cc/) or [Task Scheduler](https://learn.microsoft.com/windows/win32/taskschd/task-scheduler-start-page) to run `npm start` on boot.  Make sure Node and your project folder are accessible to the service account.
+* **Reverse proxy** – in a production environment you may wish to proxy the web app through IIS, Nginx or Apache and enable HTTPS.  Forward incoming requests on the appropriate port to your Node process (`localhost:8080`).
 
-## Felsökning
+## Troubleshooting
 
-* **Current = –**
-  Lagret spelar inte (PAUSE) eller din FFmpeg‑build saknar `CALL FRAME`. Testa **Start** igen. Kontrollera kanal/lager.
-* **Drift ökar**
-  Säkerställ identisk fps & längd på alla klipp, intra‑only media, NTP synk. Sänk intervall eller höj tolerans.
-* **Blink vid FADE**
-  Öka `fadeFrames` (2–3) eller använd `CUT`. Kontrollera disk/CPU‑headroom.
-* **Disconnected**
-  Fel IP/port eller brandvägg blockerar 5250. Verifiera att CasparCG kör och svarar på AMCP.
+* **Cannot connect to CasparCG servers** – check that each `host` is reachable from the machine running this control app.  Verify that the AMCP port (`5250`) is open and allowed through firewalls.  Use `telnet <host> 5250` to test connectivity.
+* **No video output** – ensure the `channel` and `baseLayer` numbers match your CasparCG configuration (`casparcg.config`).  Layers must not collide with other content being rendered on the same channel.
+* **Drift never corrects** – confirm that all slots have identical frame rate files (e.g. all are 50 fps).  Mixed fps will cause drift.  Also, verify that the timecode you entered is valid; if the frame part exceeds `fps – 1`, it will wrap into the next second.
+* **High CPU** – reducing `autosyncIntervalSec` increases the frequency of AMCP commands.  Increase the interval if your system becomes sluggish.
 
----
+## Contributing
 
-## FAQ
-
-**Q: Måste jag använda +10 för standby‑lager?**
-A: Nej, men mallen gör det enkelt att manuellt felsöka. Du kan välja andra steg – uppdatera bara `baseLayer`.
-
-**Q: Spelar standby hela tiden?**
-A: Nej. Standby är **PAUSE** med **OPACITY=0** och **VOLUME=0** tills resync sker; båda lagren spelar endast under en kort FADE/CUT.
-
-**Q: Startar spelning automatiskt på serverstart?**
-A: Nej. Default är **OFF**, och **PLAY** triggas först när du klickar **Start**/**Start från TC**.
-
-**Q: Timecode per slot – måste alla vara lika?**
-A: Nej. Du kan ge olika offsets per slot. För för att starta synkrona klipp är det rekommenderade att ange samma TC överallt.
+Contributions and suggestions are welcome!  Please open issues or pull requests on the GitHub repository.  This project is intended to be a community resource for anyone building multi‑channel play‑out systems with CasparCG.

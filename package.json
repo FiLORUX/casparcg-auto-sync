@@ -1,0 +1,28 @@
+{
+  "name": "caspar-sync",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Multi-slot CasparCG playback synchroniser with dark-themed web UI.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "keywords": [
+    "casparcg",
+    "playout",
+    "sync",
+    "broadcast",
+    "websocket"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "casparcg-connection": "^5.2.0",
+    "express": "^4.19.2",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

@@ -1,0 +1,177 @@
+/*
+ * Dark mode styling for the Caspar Autosync UI.  Colours and spacing are
+ * defined via CSS custom properties at the root level.  Buttons and tables
+ * derive their palette from these variables.  Adjust the variables below to
+ * quickly theme the entire application.
+ */
+
+:root {
+  --bg: #121212;
+  --panel: #1e1e1e;
+  --border: #333333;
+  --text: #e5e5e5;
+  --primary: #2196f3;
+  --success: #4caf50;
+  --warning: #ff9800;
+  --danger: #f44336;
+  --muted: #777777;
+  --input-bg: #2a2a2a;
+  --input-border: #444444;
+  --table-header: #1f2a37;
+  --table-row: #19212b;
+  --table-row-alt: #141c24;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+}
+
+.container {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+h1 {
+  margin-top: 0;
+  font-size: 1.6rem;
+  margin-bottom: 0.5rem;
+}
+
+section {
+  margin-bottom: 1.5rem;
+  background-color: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem;
+}
+
+.section-title {
+  margin-top: 0;
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+  color: var(--primary);
+}
+
+/* Inputs */
+input[type=text],
+input[type=number],
+select {
+  background-color: var(--input-bg);
+  color: var(--text);
+  border: 1px solid var(--input-border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.9rem;
+}
+input[type=text]:focus,
+input[type=number]:focus,
+select:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* Buttons */
+button {
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--bg);
+  transition: background-color 0.2s ease;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Colour variations for different actions */
+.btn-preload { background-color: var(--muted); }
+.btn-start   { background-color: var(--success); }
+.btn-pause   { background-color: var(--danger); }
+.btn-resync  { background-color: var(--warning); }
+.btn-reset   { background-color: var(--warning); }
+.btn-save    { background-color: var(--primary); }
+.btn-off     { background-color: var(--muted); }
+.btn-manual  { background-color: var(--primary); }
+.btn-auto    { background-color: var(--success); }
+.btn-cut     { background-color: var(--primary); }
+.btn-fade    { background-color: var(--warning); }
+
+.btn-off.active { box-shadow: 0 0 0 2px var(--muted); }
+.btn-manual.active { box-shadow: 0 0 0 2px var(--primary); }
+.btn-auto.active { box-shadow: 0 0 0 2px var(--success); }
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+th, td {
+  padding: 4px 6px;
+  font-size: 0.8rem;
+}
+th {
+  background-color: var(--table-header);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+tr:nth-child(even) {
+  background-color: var(--table-row);
+}
+tr:nth-child(odd) {
+  background-color: var(--table-row-alt);
+}
+tr:hover { background-color: #0d141e; }
+
+.status-table td.ok { color: var(--success); }
+.status-table td.bad { color: var(--danger); }
+
+.meta-info {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.meta-info span {
+  background-color: var(--panel);
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+/* Slot table layout */
+.slots-table input,
+.slots-table select {
+  width: 100%;
+  box-sizing: border-box;
+}
+.slots-table td {
+  vertical-align: middle;
+}
+
+@media (max-width: 768px) {
+  .slots-table td, .status-table td {
+    font-size: 0.7rem;
+  }
+  button {
+    font-size: 0.75rem;
+  }
+}

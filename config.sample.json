@@ -1,0 +1,30 @@
+{
+  "fps": 50,
+  "frames": 30000,
+  "autosyncIntervalSec": 10,
+  "driftToleranceFrames": 1,
+  "resyncMode": "cut",
+  "fadeFrames": 2,
+  "slots": [
+    { "name": "Slot 1",  "host": "", "port": 5250, "channel": 1, "baseLayer": 10, "clip": "", "timecode": "00:00:00:00" },
+    { "name": "Slot 2",  "host": "", "port": 5250, "channel": 1, "baseLayer": 11, "clip": "", "timecode": "00:00:00:00" },
+    { "name": "Slot 3",  "host": "", "port": 5250, "channel": 1, "baseLayer": 12, "clip": "", "timecode": "00:00:00:00" },
+    { "name": "Slot 4",  "host": "", "port": 5250, "channel": 1, "baseLayer": 13, "clip": "", "timecode": "00:00:00:00" },
+    { "name": "Slot 5",  "host": "", "port": 5250, "channel": 1, "baseLayer": 14, "clip": "", "timecode": "00:00:00:00" },
+    { "name": "Slot 6",  "host": "", "port": 5250, "channel": 1, "baseLayer": 15, "clip": "", "timecode": "00:00:00:00" },
+    { "name": "Slot 7",  "host": "", "port": 5250, "channel": 1, "baseLayer": 16, "clip": "", "timecode": "00:00:00:00" },
+    { "name": "Slot 8",  "host": "", "port": 5250, "channel": 1, "baseLayer": 17, "clip": "", "timecode": "00:00:00:00" },
+    { "name": "Slot 9",  "host": "", "port": 5250, "channel": 1, "baseLayer": 18, "clip": "", "timecode": "00:00:00:00" },
+    { "name": "Slot 10", "host": "", "port": 5250, "channel": 1, "baseLayer": 19, "clip": "", "timecode": "00:00:00:00" },
+    { "name": "Slot 11", "host": "", "port": 5250, "channel": 1, "baseLayer": 20, "clip": "", "timecode": "00:00:00:00" },
+    { "name": "Slot 12", "host": "", "port": 5250, "channel": 1, "baseLayer": 21, "clip": "", "timecode": "00:00:00:00" },
+    { "name": "Slot 13", "host": "", "port": 5250, "channel": 1, "baseLayer": 22, "clip": "", "timecode": "00:00:00:00" },
+    { "name": "Slot 14", "host": "", "port": 5250, "channel": 1, "baseLayer": 23, "clip": "", "timecode": "00:00:00:00" },
+    { "name": "Slot 15", "host": "", "port": 5250, "channel": 1, "baseLayer": 24, "clip": "", "timecode": "00:00:00:00" },
+    { "name": "Slot 16", "host": "", "port": 5250, "channel": 1, "baseLayer": 25, "clip": "", "timecode": "00:00:00:00" },
+    { "name": "Slot 17", "host": "", "port": 5250, "channel": 1, "baseLayer": 26, "clip": "", "timecode": "00:00:00:00" },
+    { "name": "Slot 18", "host": "", "port": 5250, "channel": 1, "baseLayer": 27, "clip": "", "timecode": "00:00:00:00" },
+    { "name": "Slot 19", "host": "", "port": 5250, "channel": 1, "baseLayer": 28, "clip": "", "timecode": "00:00:00:00" },
+    { "name": "Slot 20", "host": "", "port": 5250, "channel": 1, "baseLayer": 29, "clip": "", "timecode": "00:00:00:00" }
+  ]
+}

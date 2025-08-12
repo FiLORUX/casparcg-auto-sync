@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Caspar Autosync Control</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Caspar Autosync Control</h1>
+
+    <!-- Global configuration section -->
+    <section id="global">
+      <div class="section-title">Global Settings</div>
+      <table>
+        <tbody>
+          <tr>
+            <td>FPS</td>
+            <td><input id="fps" type="number" step="0.01" min="1"></td>
+            <td>Total Frames (loop)</td>
+            <td><input id="frames" type="number" min="1"></td>
+          </tr>
+          <tr>
+            <td>Auto Interval (sec)</td>
+            <td><input id="interval" type="number" min="1"></td>
+            <td>Drift Tolerance (frames)</td>
+            <td><input id="tolerance" type="number" min="0"></td>
+          </tr>
+          <tr>
+            <td>Resync Mode</td>
+            <td>
+              <select id="resyncMode">
+                <option value="cut">Cut</option>
+                <option value="fade">Fade</option>
+              </select>
+            </td>
+            <td>Fade Frames</td>
+            <td><input id="fadeFrames" type="number" min="1"></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Mode selection -->
+    <section id="modes">
+      <div class="section-title">Sync Mode</div>
+      <div class="button-group">
+        <button id="mode-off" class="btn-off">Off</button>
+        <button id="mode-manual" class="btn-manual">Manual</button>
+        <button id="mode-auto" class="btn-auto">Auto</button>
+      </div>
+    </section>
+
+    <!-- Playback controls -->
+    <section id="actions">
+      <div class="section-title">Playback Controls</div>
+      <div class="button-group">
+        <button id="preload" class="btn-preload">Preload</button>
+        <button id="start" class="btn-start">Start</button>
+        <button id="pause" class="btn-pause">Pause</button>
+        <button id="resync" class="btn-resync">Resync Now</button>
+        <button id="reset" class="btn-reset">Reset Clock</button>
+        <button id="save" class="btn-save">Save Config</button>
+      </div>
+    </section>
+
+    <!-- Slots configuration -->
+    <section id="slot-config">
+      <div class="section-title">Slots Configuration</div>
+      <table class="slots-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Host</th>
+            <th>Port</th>
+            <th>Channel</th>
+            <th>Base Layer</th>
+            <th>Clip</th>
+            <th>Timecode</th>
+          </tr>
+        </thead>
+        <tbody id="slot-table-body"></tbody>
+      </table>
+    </section>
+
+    <!-- Playback status -->
+    <section id="status">
+      <div class="section-title">Playback Status</div>
+      <div id="meta" class="meta-info"></div>
+      <table class="status-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Host</th>
+            <th>Ch</th>
+            <th>Active</th>
+            <th>Standby</th>
+            <th>Clip</th>
+            <th>TC</th>
+            <th>Curr</th>
+            <th>Target</th>
+            <th>Drift</th>
+          </tr>
+        </thead>
+        <tbody id="status-table-body"></tbody>
+      </table>
+    </section>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
