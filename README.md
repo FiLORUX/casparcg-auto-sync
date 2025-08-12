@@ -41,8 +41,8 @@ caspar-sync/
 1. **Clone the repository**
 
 ```bash
-git clone https://github.com/yourusername/caspar-sync.git
-cd caspar-sync
+git clone https://github.com/FiLORUX/casparcg-auto-sync.git
+cd casparcg-auto-sync
 ```
 
 2. **Install dependencies**
