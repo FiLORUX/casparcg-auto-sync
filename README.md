@@ -1,4 +1,4 @@
-# CasparCG Autosync with Dual Layer Resync
+# CasparCG Sync - Dual Layer Automatic Resync
 
 This repository contains a **complete, production‑ready control server** and **web‑based user interface** for synchronised playout across up to **twenty** CasparCG playback nodes.  It solves the common problem of keeping multiple SDI/NDI feeds in frame‑accurate sync and provides a modern, dark‑themed dashboard for configuring and operating your playout.
 
