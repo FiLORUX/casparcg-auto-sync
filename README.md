@@ -1,10 +1,13 @@
-# Caspar Autosync with Dubbellayer Resync
+# CasparCG Auto‑Sync
 
 This repository contains a **complete, production‑ready control server** and **web‑based user interface** for synchronised playout across up to **twenty** CasparCG playback nodes.  It solves the common problem of keeping multiple SDI/NDI feeds in frame‑accurate sync and provides a modern, dark‑themed dashboard for configuring and operating your playout.
 
 ## Key Features
 
 * **20 independent slots** – each slot represents a single clip on a remote CasparCG server.  You can assign host, port, channel, base layer, file name and start timecode per slot.
+* **Always‑available blank slot** – the GUI always adds an extra empty row at the bottom of the slots table.  When you fill in the last row and save, a new blank row will appear on reload; clearing all fields (and unticking the Active box) and saving will remove that slot.  There is effectively no hard limit on how many slots you can configure.
+* **Active toggle per slot** – each slot has a checkbox to enable or disable it.  Only those with the *Active* box checked will be controlled by the server.  Disabled slots remain in the configuration but do not send commands or appear in the status view.
+* **Sensible defaults** – new slots default to host `127.0.0.1`, port `5250`, channel `1`, base layer `10` and timecode `00:00:00:00`.  These values can be changed per slot as needed.
 * **Frame‑accurate synchronisation** – the server maintains a common start time (`t0`) and periodically compares the playing frame of each slot to the expected frame.  When drift exceeds a configurable tolerance the system performs a seamless resync using a second hidden layer and either a hard *cut* or a short *fade* (cross‑fade).
 * **Manual or automatic operation** – choose between **OFF**, **MANUAL** and **AUTO** modes.  Manual mode lets you trigger resyncs on demand, while Auto mode keeps your feeds aligned at a user‑defined interval.
 * **Timecode support** – for each slot you can enter a starting timecode in `HH:MM:SS:FF` format.  During playback the clip will seek to that frame before starting, allowing you to cue different portions of a file across your feeds.
@@ -16,7 +19,7 @@ This repository contains a **complete, production‑ready control server** and *
 ## Project Structure
 
 ```
-caspar-sync/
+casparcg-auto-sync/
 ├── README.md              – You are reading it now.
 ├── package.json           – NPM metadata and dependencies.
 ├── index.js               – The Node.js control server.
@@ -41,8 +44,8 @@ caspar-sync/
 1. **Clone the repository**
 
 ```bash
-git clone https://github.com/yourusername/caspar-sync.git
-cd caspar-sync
+git clone https://github.com/yourusername/casparcg-auto-sync.git
+cd casparcg-auto-sync
 ```
 
 2. **Install dependencies**
