@@ -1,4 +1,4 @@
-# CasparCG Auto-Sync - Dual Layer Automatic Playout Resync for Multiple Servers and Channels
+# Caspar Autosync with Dubbellayer Resync
 
 This repository contains a **complete, production‑ready control server** and **web‑based user interface** for synchronised playout across up to **twenty** CasparCG playback nodes.  It solves the common problem of keeping multiple SDI/NDI feeds in frame‑accurate sync and provides a modern, dark‑themed dashboard for configuring and operating your playout.
 
@@ -41,8 +41,8 @@ caspar-sync/
 1. **Clone the repository**
 
 ```bash
-git clone https://github.com/FiLORUX/casparcg-auto-sync.git
-cd casparcg-auto-sync
+git clone https://github.com/yourusername/caspar-sync.git
+cd caspar-sync
 ```
 
 2. **Install dependencies**

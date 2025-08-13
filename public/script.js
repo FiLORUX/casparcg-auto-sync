@@ -38,19 +38,45 @@ async function loadConfig() {
   const tbody = document.getElementById('slot-table-body');
   tbody.innerHTML = '';
   cfg.slots.forEach((slot, idx) => {
+    // For each configured slot, create a table row with an enabled checkbox
+    // and inputs for all editable properties.  Missing values fall back to
+    // sensible defaults (host = 127.0.0.1, baseLayer = 10, etc.).  The
+    // enabled checkbox defaults to true unless explicitly set to false.
     const tr = document.createElement('tr');
+    const enabled = (slot.enabled !== false);
     tr.innerHTML = `
       <td>${idx + 1}</td>
+      <td><input type="checkbox" id="slot-enabled-${idx}" ${enabled ? 'checked' : ''}></td>
       <td><input type="text" id="slot-name-${idx}" value="${slot.name || ''}" placeholder="Slot ${idx + 1}"></td>
-      <td><input type="text" id="slot-host-${idx}" value="${slot.host || ''}" placeholder="127.0.0.1"></td>
+      <td><input type="text" id="slot-host-${idx}" value="${slot.host || '127.0.0.1'}" placeholder="127.0.0.1"></td>
       <td><input type="number" id="slot-port-${idx}" value="${slot.port || 5250}" min="1"></td>
       <td><input type="number" id="slot-channel-${idx}" value="${slot.channel || 1}" min="1"></td>
-      <td><input type="number" id="slot-base-${idx}" value="${slot.baseLayer || (10 + idx)}" min="1"></td>
+      <td><input type="number" id="slot-base-${idx}" value="${slot.baseLayer || 10}" min="1"></td>
       <td><input type="text" id="slot-clip-${idx}" value="${slot.clip || ''}" placeholder="file.mov"></td>
       <td><input type="text" id="slot-tc-${idx}" value="${slot.timecode || '00:00:00:00'}" pattern="\\d{2}:\\d{2}:\\d{2}:\\d{2}"></td>
     `;
     tbody.appendChild(tr);
   });
+
+  // Always render an extra empty row at the bottom so the user can add
+  // additional slots on demand.  This row defaults to disabled and blank
+  // fields (with sensible defaults where appropriate).  When the user
+  // populates this row and saves, it will persist and a new empty row
+  // will appear on the next reload.
+  const blankIdx = cfg.slots.length;
+  const trBlank = document.createElement('tr');
+  trBlank.innerHTML = `
+    <td>${blankIdx + 1}</td>
+    <td><input type="checkbox" id="slot-enabled-${blankIdx}"></td>
+    <td><input type="text" id="slot-name-${blankIdx}" value="" placeholder="Slot ${blankIdx + 1}"></td>
+    <td><input type="text" id="slot-host-${blankIdx}" value="127.0.0.1" placeholder="127.0.0.1"></td>
+    <td><input type="number" id="slot-port-${blankIdx}" value="5250" min="1"></td>
+    <td><input type="number" id="slot-channel-${blankIdx}" value="1" min="1"></td>
+    <td><input type="number" id="slot-base-${blankIdx}" value="10" min="1"></td>
+    <td><input type="text" id="slot-clip-${blankIdx}" value="" placeholder="file.mov"></td>
+    <td><input type="text" id="slot-tc-${blankIdx}" value="00:00:00:00" pattern="\\d{2}:\\d{2}:\\d{2}:\\d{2}"></td>
+  `;
+  tbody.appendChild(trBlank);
   // Highlight the current sync mode button
   setActiveMode(cfg.mode || 'off');
   // Select resync mode in the dropdown
@@ -133,19 +159,53 @@ async function onSave() {
   cfg.driftToleranceFrames = parseInt(document.getElementById('tolerance').value, 10) || 1;
   cfg.resyncMode = document.getElementById('resyncMode').value || 'cut';
   cfg.fadeFrames = parseInt(document.getElementById('fadeFrames').value, 10) || 2;
-  // Gather slot fields
+  // Gather slot fields from all rows currently rendered.  The table body
+  // always contains one extra blank row at the end.  We iterate through
+  // each row and extract input values.  Slots that are completely
+  // unconfigured (blank) and disabled are dropped.  Slots with at least
+  // one non‑default field or with the enabled checkbox ticked will be
+  // persisted.  Defaults are applied for host and baseLayer when fields
+  // are empty.
   cfg.slots = [];
-  for (let i = 0; i < 20; i++) {
-    const name  = document.getElementById(`slot-name-${i}`).value.trim();
-    const host  = document.getElementById(`slot-host-${i}`).value.trim();
-    const port  = parseInt(document.getElementById(`slot-port-${i}`).value, 10) || 5250;
-    const channel = parseInt(document.getElementById(`slot-channel-${i}`).value, 10) || 1;
-    const base   = parseInt(document.getElementById(`slot-base-${i}`).value, 10) || 10 + i;
-    const clip  = document.getElementById(`slot-clip-${i}`).value.trim();
-    let tc    = document.getElementById(`slot-tc-${i}`).value.trim();
+  const tbody = document.getElementById('slot-table-body');
+  const rowCount = tbody.rows.length;
+  for (let i = 0; i < rowCount; i++) {
+    const enabledEl = document.getElementById(`slot-enabled-${i}`);
+    const nameEl    = document.getElementById(`slot-name-${i}`);
+    const hostEl    = document.getElementById(`slot-host-${i}`);
+    const portEl    = document.getElementById(`slot-port-${i}`);
+    const channelEl = document.getElementById(`slot-channel-${i}`);
+    const baseEl    = document.getElementById(`slot-base-${i}`);
+    const clipEl    = document.getElementById(`slot-clip-${i}`);
+    const tcEl      = document.getElementById(`slot-tc-${i}`);
+    if (!nameEl || !hostEl || !portEl || !channelEl || !baseEl || !clipEl || !tcEl || !enabledEl) {
+      continue;
+    }
+    const enabled = enabledEl.checked;
+    const name    = nameEl.value.trim();
+    let host      = hostEl.value.trim();
+    const port    = parseInt(portEl.value, 10) || 5250;
+    const channel = parseInt(channelEl.value, 10) || 1;
+    const base    = parseInt(baseEl.value, 10) || 10;
+    const clip    = clipEl.value.trim();
+    let tc        = tcEl.value.trim();
     // Normalise timecode; if invalid, default to 00:00:00:00
     if (!/^\d{2}:\d{2}:\d{2}:\d{2}$/.test(tc)) tc = '00:00:00:00';
-    cfg.slots.push({ name, host, port, channel, baseLayer: base, clip, timecode: tc });
+    // Apply default for host if empty
+    if (!host) host = '127.0.0.1';
+    // Determine whether this row is effectively blank.  If the user has
+    // unticked the enabled checkbox and left all other fields at their
+    // defaults, then this slot is ignored.
+    const isBlank = !enabled &&
+                    name === '' &&
+                    (host === '127.0.0.1' || host === '') &&
+                    clip === '' &&
+                    tc === '00:00:00:00' &&
+                    port === 5250 &&
+                    channel === 1 &&
+                    base === 10;
+    if (isBlank) continue;
+    cfg.slots.push({ name, host, port, channel, baseLayer: base, clip, timecode: tc, enabled });
   }
   const res = await post('/api/config', cfg);
   if (res && res.ok) {

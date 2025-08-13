@@ -167,6 +167,16 @@ tr:hover { background-color: #0d141e; }
   vertical-align: middle;
 }
 
+/* Make checkbox columns centre their content and scale the checkboxes up a bit for easier clicking. */
+.slots-table th:nth-child(2),
+.slots-table td:nth-child(2) {
+  text-align: center;
+}
+.slots-table input[type=checkbox] {
+  transform: scale(1.2);
+  cursor: pointer;
+}
+
 @media (max-width: 768px) {
   .slots-table td, .status-table td {
     font-size: 0.7rem;

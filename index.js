@@ -316,7 +316,12 @@ async function preloadAll() {
   const grouped = new Map(); // hostPort -> array of commands
   for (let i = 0; i < config.slots.length; i++) {
     const slot = config.slots[i];
-    if (!slot.host || !slot.clip) continue; // skip empty
+    // Skip disabled slots entirely.  A slot is considered disabled when the
+    // user clears the enabled checkbox in the UI or when `enabled === false`
+    // is present in the configuration.  Blank host or missing clip also
+    // indicates a slot should be skipped.
+    if (slot.enabled === false) continue;
+    if (!slot.host || !slot.clip) continue; // skip if host or clip missing
     const { host, port, channel, clip } = slot;
     const pair = getPair(i);
     const key = `${host}:${port}`;
@@ -361,6 +366,7 @@ async function startAll() {
   const grouped = new Map();
   for (let i = 0; i < config.slots.length; i++) {
     const slot = config.slots[i];
+    if (slot.enabled === false) continue;
     if (!slot.host || !slot.clip) continue;
     const { host, port, channel, clip, timecode } = slot;
     const pair = getPair(i);
@@ -404,6 +410,7 @@ async function pauseAll() {
   const grouped = new Map();
   for (let i = 0; i < config.slots.length; i++) {
     const slot = config.slots[i];
+    if (slot.enabled === false) continue;
     if (!slot.host || !slot.clip) continue;
     const { host, port, channel } = slot;
     const pair = getPair(i);
@@ -438,6 +445,7 @@ async function resyncAll(mode = config.resyncMode, tf = targetFrame()) {
   // Prepare standby layers on the correct frame first
   for (let i = 0; i < config.slots.length; i++) {
     const slot = config.slots[i];
+    if (slot.enabled === false) continue;
     if (!slot.host || !slot.clip) continue;
     const { host, port, channel, clip } = slot;
     const conn = getConnection(host, port);
@@ -448,6 +456,7 @@ async function resyncAll(mode = config.resyncMode, tf = targetFrame()) {
   // Now transition each slot
   for (let i = 0; i < config.slots.length; i++) {
     const slot = config.slots[i];
+    if (slot.enabled === false) continue;
     if (!slot.host || !slot.clip) continue;
     const { host, port, channel } = slot;
     const conn = getConnection(host, port);
@@ -477,6 +486,10 @@ async function snapshotStatus() {
   const rows = [];
   for (let i = 0; i < config.slots.length; i++) {
     const slot = config.slots[i];
+    // Skip disabled slots from the status.  We still include slots
+    // with missing host/clip if they are enabled to surface misconfigurations,
+    // but disabled slots are hidden from the status entirely.
+    if (slot.enabled === false) continue;
     if (!slot.host || !slot.clip) continue;
     const pair = getPair(i);
     const conn = getConnection(slot.host, slot.port);
