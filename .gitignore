@@ -23,3 +23,9 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# AI/LLM local settings
+.claude/
+.cursor/
+.aider/
+.continue/
