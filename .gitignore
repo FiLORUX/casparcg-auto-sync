@@ -1,6 +1,25 @@
+# Dependencies
 node_modules/
+
+# Local configuration (with credentials)
 config.json
+
+# Environment
 .env
+.env.*
+
+# Logs
 logs/
-.DS_Store
+*.log
 npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
